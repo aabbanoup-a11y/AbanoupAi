@@ -34,7 +34,15 @@ async function callModel(
       model,
       stream: true,
       input: [
-        { role: "system", content: [{ type: "input_text", text: system }] },
+        {
+          role: "system",
+          content: [
+            {
+              type: "input_text",
+              text: `${system}\nاكتب نص عادي واضح بدون رموز تنسيق زي ** أو ## أو جداول.`,
+            },
+          ],
+        },
         ...messages.map((m) => ({
           role: m.role,
           content: [
