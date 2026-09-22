@@ -1,24 +1,349 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { Search, Sparkles, Users, Building2, Loader2, Plus } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { generateTasks, type GeneratedTask } from "@/lib/ai.functions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  component: Home,
+  head: () => ({
+    meta: [
+      { title: "منصة الموظفين — 162 موظف ومساعد ذكي للمهام" },
+      {
+        name: "description",
+        content:
+          "دليل كامل لـ 162 موظف بكل الأقسام مع بحث فوري ومساعد ذكاء اصطناعي يكتب مهام العمل وينفذها فوراً.",
+      },
+      { property: "og:title", content: "منصة الموظفين — 162 موظف ومساعد ذكي للمهام" },
+      {
+        property: "og:description",
+        content: "ابحث في 162 موظف وولّد مهام عمل جاهزة بالذكاء الاصطناعي.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+    links: [{ rel: "canonical", href: "/" }],
+  }),
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+type Employee = {
+  id: string;
+  code: string;
+  full_name: string;
+  department: string;
+  job_title: string;
+  email: string;
+  phone: string;
+  hired_at: string;
+  status: string;
+};
+
+type Task = {
+  id: string;
+  employee_id: string | null;
+  title: string;
+  details: string | null;
+  priority: string;
+  status: string;
+};
+
+const priorityLabel: Record<string, string> = {
+  low: "منخفضة",
+  medium: "متوسطة",
+  high: "عالية",
+};
+
+function Home() {
+  const [search, setSearch] = useState("");
+  const [dept, setDept] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Employee | null>(null);
+
+  const employeesQuery = useQuery({
+    queryKey: ["employees"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("employees")
+        .select("*")
+        .order("code", { ascending: true });
+      if (error) throw error;
+      return data as Employee[];
+    },
+  });
+
+  const tasksQuery = useQuery({
+    queryKey: ["tasks"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as Task[];
+    },
+  });
+
+  const employees = employeesQuery.data ?? [];
+  const departments = useMemo(
+    () => Array.from(new Set(employees.map((e) => e.department))),
+    [employees],
+  );
+
+  const filtered = employees.filter((e) => {
+    const matchDept = !dept || e.department === dept;
+    const q = search.trim();
+    const matchSearch =
+      !q ||
+      e.full_name.includes(q) ||
+      e.job_title.includes(q) ||
+      e.code.toLowerCase().includes(q.toLowerCase());
+    return matchDept && matchSearch;
+  });
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div dir="rtl" className="min-h-screen bg-background text-foreground">
+      <header className="border-b border-border bg-card/60">
+        <div className="mx-auto max-w-6xl px-4 py-10">
+          <Badge className="mb-4">مزامنة مباشرة مع قاعدة البيانات</Badge>
+          <h1 className="text-3xl font-bold sm:text-4xl">منصة إدارة الموظفين</h1>
+          <p className="mt-3 max-w-xl text-muted-foreground">
+            دليل كامل لفريق العمل مع مساعد ذكاء اصطناعي يكتب مهام جاهزة لكل موظف ويحفظها فوراً.
+          </p>
+
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Stat icon={<Users className="size-4" />} label="إجمالي الموظفين" value={employees.length} />
+            <Stat icon={<Building2 className="size-4" />} label="الأقسام" value={departments.length} />
+            <Stat
+              icon={<Users className="size-4" />}
+              label="على رأس العمل"
+              value={employees.filter((e) => e.status === "active").length}
+            />
+            <Stat
+              icon={<Sparkles className="size-4" />}
+              label="المهام المولّدة"
+              value={tasksQuery.data?.length ?? 0}
+            />
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-6xl px-4 py-8">
+        <div className="relative">
+          <Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="ابحث بالاسم أو الوظيفة أو الكود..."
+            className="pr-10"
+          />
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant={dept === null ? "default" : "outline"}
+            onClick={() => setDept(null)}
+          >
+            كل الأقسام
+          </Button>
+          {departments.map((d) => (
+            <Button
+              key={d}
+              size="sm"
+              variant={dept === d ? "default" : "outline"}
+              onClick={() => setDept(d)}
+            >
+              {d}
+            </Button>
+          ))}
+        </div>
+
+        {employeesQuery.isLoading ? (
+          <p className="mt-10 text-center text-muted-foreground">جارِ تحميل الموظفين...</p>
+        ) : (
+          <>
+            <p className="mt-6 text-sm text-muted-foreground">
+              عرض {filtered.length} من {employees.length} موظف
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((e) => (
+                <EmployeeCard
+                  key={e.id}
+                  employee={e}
+                  tasks={(tasksQuery.data ?? []).filter((t) => t.employee_id === e.id)}
+                  onOpen={() => setSelected(e)}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </main>
+
+      <TaskDialog employee={selected} onOpenChange={(o) => !o && setSelected(null)} />
     </div>
+  );
+}
+
+function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <div className="flex items-center gap-2 text-muted-foreground">
+        {icon}
+        <span className="text-xs">{label}</span>
+      </div>
+      <p className="mt-2 text-2xl font-bold">{value}</p>
+    </div>
+  );
+}
+
+function EmployeeCard({
+  employee,
+  tasks,
+  onOpen,
+}: {
+  employee: Employee;
+  tasks: Task[];
+  onOpen: () => void;
+}) {
+  const initials = employee.full_name.slice(0, 2);
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50">
+      <div className="flex items-start gap-3">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+          {initials}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h3 className="truncate font-semibold">{employee.full_name}</h3>
+            <Badge variant={employee.status === "active" ? "secondary" : "outline"}>
+              {employee.status === "active" ? "نشط" : "إجازة"}
+            </Badge>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {employee.job_title} — {employee.department}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {employee.code} · {employee.phone}
+          </p>
+        </div>
+      </div>
+
+      {tasks.length > 0 && (
+        <ul className="mt-3 space-y-1 border-t border-border pt-3">
+          {tasks.slice(0, 3).map((t) => (
+            <li key={t.id} className="truncate text-xs text-muted-foreground">
+              • {t.title}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <Button size="sm" variant="outline" className="mt-3 w-full" onClick={onOpen}>
+        <Sparkles className="size-4" />
+        مهام بالذكاء الاصطناعي
+      </Button>
+    </div>
+  );
+}
+
+function TaskDialog({
+  employee,
+  onOpenChange,
+}: {
+  employee: Employee | null;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [goal, setGoal] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<GeneratedTask[]>([]);
+  const run = useServerFn(generateTasks);
+  const queryClient = useQueryClient();
+
+  const handleGenerate = async () => {
+    if (!employee) return;
+    setLoading(true);
+    setResult([]);
+    try {
+      const tasks = await run({
+        data: {
+          employeeName: employee.full_name,
+          department: employee.department,
+          jobTitle: employee.job_title,
+          goal: goal.trim() || "تحسين أداء الموظف هذا الأسبوع",
+        },
+      });
+      setResult(tasks);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "حصل خطأ غير متوقع");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveTask = async (task: GeneratedTask) => {
+    if (!employee) return;
+    const { error } = await supabase.from("tasks").insert({
+      employee_id: employee.id,
+      title: task.title,
+      details: task.details,
+      priority: task.priority,
+    });
+    if (error) {
+      toast.error("تعذر حفظ المهمة");
+      return;
+    }
+    toast.success("تم حفظ المهمة");
+    queryClient.invalidateQueries({ queryKey: ["tasks"] });
+  };
+
+  return (
+    <Dialog open={!!employee} onOpenChange={onOpenChange}>
+      <DialogContent dir="rtl" className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="text-right">
+            مهام لـ {employee?.full_name ?? ""}
+          </DialogTitle>
+        </DialogHeader>
+
+        <Input
+          value={goal}
+          onChange={(e) => setGoal(e.target.value)}
+          placeholder="اكتب الهدف (مثال: رفع المبيعات 10% خلال أسبوع)"
+        />
+
+        <Button onClick={handleGenerate} disabled={loading}>
+          {loading ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+          {loading ? "بيكتب المهام..." : "ولّد المهام"}
+        </Button>
+
+        <div className="max-h-72 space-y-2 overflow-y-auto">
+          {result.map((t, i) => (
+            <div key={i} className="rounded-lg border border-border p-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-medium">{t.title}</p>
+                <Badge variant="outline">{priorityLabel[t.priority] ?? t.priority}</Badge>
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">{t.details}</p>
+              <Button size="sm" variant="ghost" className="mt-2" onClick={() => saveTask(t)}>
+                <Plus className="size-4" />
+                حفظ المهمة
+              </Button>
+            </div>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
