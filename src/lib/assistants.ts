@@ -34,6 +34,7 @@ export type Assistant = {
   name: string;
   tagline: string;
   emoji: string;
+  model: string;
   system: string;
   starters: string[];
 };
@@ -41,6 +42,7 @@ export type Assistant = {
 export const ASSISTANTS: Assistant[] = [
   {
     key: "manager",
+    model: "openai/gpt-6-astra",
     name: "المدير المنسّق",
     tagline: "يوزّع المهمة على باقي المساعدين ويعمل خطة",
     emoji: "🧭",
@@ -50,6 +52,7 @@ export const ASSISTANTS: Assistant[] = [
   },
   {
     key: "study",
+    model: "google/gemini-3.8-flash",
     name: "مساعد الدراسة",
     tagline: "أولى ثانوي — تلخيص، مراجعة، خطة مذاكرة",
     emoji: "📚",
@@ -59,6 +62,7 @@ export const ASSISTANTS: Assistant[] = [
   },
   {
     key: "karate",
+    model: "google/gemini-3.7-flash",
     name: "مدرب الكاراتيه",
     tagline: "تدريب، كاتا، كوميتيه، لياقة",
     emoji: "🥋",
@@ -68,6 +72,7 @@ export const ASSISTANTS: Assistant[] = [
   },
   {
     key: "mind",
+    model: "google/gemini-3.8-flash",
     name: "الصحة النفسية",
     tagline: "تركيز، قلق الامتحانات، عادات",
     emoji: "🧠",
@@ -77,6 +82,7 @@ export const ASSISTANTS: Assistant[] = [
   },
   {
     key: "body",
+    model: "google/gemini-3.1-flash-lite",
     name: "الصحة الجسدية",
     tagline: "تغذية، نوم، تمارين مساندة",
     emoji: "💪",
@@ -86,6 +92,7 @@ export const ASSISTANTS: Assistant[] = [
   },
   {
     key: "research",
+    model: "google/gemini-3.7-flash",
     name: "الباحث",
     tagline: "كتب، مناهج، فيديوهات، مصادر",
     emoji: "🔎",
