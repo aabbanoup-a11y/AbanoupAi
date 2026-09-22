@@ -17,12 +17,80 @@ const Input = z.object({
 
 export type ChatReply = { text: string; model: string; switched: boolean };
 
+type Msg = { role: "user" | "assistant"; content: string };
+
+const styleHint = "اكتب نص عادي واضح بدون رموز تنسيق زي ** أو ## أو جداول.";
+
+// نماذج جوجل بتشتغل على chat/completions، ونماذج OpenAI على responses.
+async function callChatCompletions(
+  key: string,
+  model: string,
+  system: string,
+  messages: Msg[],
+): Promise<string> {
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Lovable-API-Key": key,
+      "X-Lovable-AIG-SDK": "fetch",
+    },
+    body: JSON.stringify({
+      model,
+      stream: true,
+      messages: [{ role: "system", content: `${system}\n${styleHint}` }, ...messages],
+    }),
+  });
+
+  if (!res.ok || !res.body) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`${res.status}:${body.slice(0, 160)}`);
+  }
+
+  let text = "";
+  await readSSE(res.body, (evt) => {
+    const delta = evt?.choices?.[0]?.delta?.content;
+    if (typeof delta === "string") text += delta;
+  });
+  if (!text.trim()) throw new Error("empty");
+  return text;
+}
+
+async function readSSE(
+  body: ReadableStream<Uint8Array>,
+  onEvent: (evt: any) => void,
+): Promise<void> {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      if (!line.startsWith("data:")) continue;
+      const payload = line.slice(5).trim();
+      if (!payload || payload === "[DONE]") continue;
+      try {
+        onEvent(JSON.parse(payload));
+      } catch {
+        // ignore partial frames
+      }
+    }
+  }
+}
+
 async function callModel(
   key: string,
   model: string,
   system: string,
   messages: { role: "user" | "assistant"; content: string }[],
 ): Promise<string> {
+  if (!model.startsWith("openai/")) {
+    return callChatCompletions(key, model, system, messages);
+  }
   const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
     method: "POST",
     headers: {

@@ -8,13 +8,18 @@ export type ModelOption = {
 
 // ترتيب البدائل: لو النموذج الأول مشغول أو فشل، يتم التحويل تلقائياً للي بعده.
 export const MODELS: ModelOption[] = [
-  { id: "google/gemini-3-flash", label: "جيميني فلاش 3", note: "سريع جداً ومتوازن" },
-  { id: "google/gemini-2.5-flash", label: "جيميني فلاش 2.5", note: "بديل مستقر" },
+  { id: "google/gemini-3.8-flash", label: "جيميني 3.8 فلاش", note: "سريع جداً ومتوازن" },
+  { id: "google/gemini-3.7-flash", label: "جيميني 3.7 فلاش", note: "بديل مستقر" },
+  { id: "google/gemini-3.1-flash-lite", label: "جيميني لايت", note: "الأخف والأسرع" },
   { id: "openai/gpt-6-astra", label: "GPT-6 أسترا", note: "تفكير أعمق" },
-  { id: "openai/gpt-5-mini", label: "GPT-5 ميني", note: "خفيف وسريع" },
 ];
 
 export const DEFAULT_MODEL = MODELS[0]!.id;
+
+// لكل دور نموذج أساسي مخصص، والباقي بدائل بالترتيب.
+export function chainFor(primary: string): string[] {
+  return [primary, ...MODELS.map((m) => m.id).filter((m) => m !== primary)];
+}
 
 export type AssistantKey =
   | "manager"
@@ -29,6 +34,7 @@ export type Assistant = {
   name: string;
   tagline: string;
   emoji: string;
+  model: string;
   system: string;
   starters: string[];
 };
@@ -36,6 +42,7 @@ export type Assistant = {
 export const ASSISTANTS: Assistant[] = [
   {
     key: "manager",
+    model: "openai/gpt-6-astra",
     name: "المدير المنسّق",
     tagline: "يوزّع المهمة على باقي المساعدين ويعمل خطة",
     emoji: "🧭",
@@ -45,6 +52,7 @@ export const ASSISTANTS: Assistant[] = [
   },
   {
     key: "study",
+    model: "google/gemini-3.8-flash",
     name: "مساعد الدراسة",
     tagline: "أولى ثانوي — تلخيص، مراجعة، خطة مذاكرة",
     emoji: "📚",
@@ -54,6 +62,7 @@ export const ASSISTANTS: Assistant[] = [
   },
   {
     key: "karate",
+    model: "google/gemini-3.7-flash",
     name: "مدرب الكاراتيه",
     tagline: "تدريب، كاتا، كوميتيه، لياقة",
     emoji: "🥋",
@@ -63,6 +72,7 @@ export const ASSISTANTS: Assistant[] = [
   },
   {
     key: "mind",
+    model: "google/gemini-3.8-flash",
     name: "الصحة النفسية",
     tagline: "تركيز، قلق الامتحانات، عادات",
     emoji: "🧠",
@@ -72,6 +82,7 @@ export const ASSISTANTS: Assistant[] = [
   },
   {
     key: "body",
+    model: "google/gemini-3.1-flash-lite",
     name: "الصحة الجسدية",
     tagline: "تغذية، نوم، تمارين مساندة",
     emoji: "💪",
@@ -81,6 +92,7 @@ export const ASSISTANTS: Assistant[] = [
   },
   {
     key: "research",
+    model: "google/gemini-3.7-flash",
     name: "الباحث",
     tagline: "كتب، مناهج، فيديوهات، مصادر",
     emoji: "🔎",
