@@ -8,13 +8,18 @@ export type ModelOption = {
 
 // ترتيب البدائل: لو النموذج الأول مشغول أو فشل، يتم التحويل تلقائياً للي بعده.
 export const MODELS: ModelOption[] = [
-  { id: "google/gemini-3-flash", label: "جيميني فلاش 3", note: "سريع جداً ومتوازن" },
-  { id: "google/gemini-2.5-flash", label: "جيميني فلاش 2.5", note: "بديل مستقر" },
+  { id: "google/gemini-3.8-flash", label: "جيميني 3.8 فلاش", note: "سريع جداً ومتوازن" },
+  { id: "google/gemini-3.7-flash", label: "جيميني 3.7 فلاش", note: "بديل مستقر" },
+  { id: "google/gemini-3.1-flash-lite", label: "جيميني لايت", note: "الأخف والأسرع" },
   { id: "openai/gpt-6-astra", label: "GPT-6 أسترا", note: "تفكير أعمق" },
-  { id: "openai/gpt-5-mini", label: "GPT-5 ميني", note: "خفيف وسريع" },
 ];
 
 export const DEFAULT_MODEL = MODELS[0]!.id;
+
+// لكل دور نموذج أساسي مخصص، والباقي بدائل بالترتيب.
+export function chainFor(primary: string): string[] {
+  return [primary, ...MODELS.map((m) => m.id).filter((m) => m !== primary)];
+}
 
 export type AssistantKey =
   | "manager"
