@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -116,7 +116,15 @@ function Home() {
     <div dir="rtl" className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-card/60">
         <div className="mx-auto max-w-6xl px-4 py-10">
-          <Badge className="mb-4">مزامنة مباشرة مع قاعدة البيانات</Badge>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <Badge>مزامنة مباشرة مع قاعدة البيانات</Badge>
+            <Button asChild size="sm">
+              <Link to="/assistant">
+                <Sparkles className="size-4" />
+                فريق المساعدين الأذكياء
+              </Link>
+            </Button>
+          </div>
           <h1 className="text-3xl font-bold sm:text-4xl">منصة إدارة الموظفين</h1>
           <p className="mt-3 max-w-xl text-muted-foreground">
             دليل كامل لفريق العمل مع مساعد ذكاء اصطناعي يكتب مهام جاهزة لكل موظف ويحفظها فوراً.
