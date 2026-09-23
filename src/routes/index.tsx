@@ -2,10 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { toast } from "sonner";
-import { Search, Sparkles, Users, Building2, Loader2, Plus } from "lucide-react";
+import { Search, Sparkles, Users, Building2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { generateTasks, type GeneratedTask } from "@/lib/ai.functions";
+import { askAssistant } from "@/lib/chat.functions";
+import { chainFor } from "@/lib/assistants";
+import { logRun, notifyDone, requestNotifyPermission } from "@/lib/activity";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +50,7 @@ type Employee = {
   phone: string;
   hired_at: string;
   status: string;
+  ai_model: string | null;
 };
 
 type Task = {
@@ -58,12 +60,6 @@ type Task = {
   details: string | null;
   priority: string;
   status: string;
-};
-
-const priorityLabel: Record<string, string> = {
-  low: "منخفضة",
-  medium: "متوسطة",
-  high: "عالية",
 };
 
 function Home() {
@@ -123,6 +119,9 @@ function Home() {
                 <Sparkles className="size-4" />
                 فريق المساعدين الأذكياء
               </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link to="/history">السجل</Link>
             </Button>
           </div>
           <h1 className="text-3xl font-bold sm:text-4xl">منصة إدارة الموظفين</h1>
@@ -243,7 +242,7 @@ function EmployeeCard({
             {employee.job_title} — {employee.department}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {employee.code} · {employee.phone}
+            {employee.code} · 🤖 {employee.ai_model?.split("/")[1]}
           </p>
         </div>
       </div>
@@ -260,7 +259,7 @@ function EmployeeCard({
 
       <Button size="sm" variant="outline" className="mt-3 w-full" onClick={onOpen}>
         <Sparkles className="size-4" />
-        مهام بالذكاء الاصطناعي
+        كلّفه بمهمة
       </Button>
     </div>
   );
