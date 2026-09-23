@@ -4,11 +4,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Loader2, Send, Users2, Sparkles, ArrowRight, Trash2 } from "lucide-react";
 import { askAssistant } from "@/lib/chat.functions";
+import { logRun, notifyDone, requestNotifyPermission } from "@/lib/activity";
 import {
   ASSISTANTS,
   MODELS,
-  DEFAULT_MODEL,
   QUICK_LINKS,
+  chainFor,
   getAssistant,
   type AssistantKey,
 } from "@/lib/assistants";
@@ -41,7 +42,7 @@ type Msg = { role: "user" | "assistant"; content: string; author?: string; model
 
 function AssistantPage() {
   const [active, setActive] = useState<AssistantKey>("manager");
-  const [model, setModel] = useState(DEFAULT_MODEL);
+  const [model, setModel] = useState<string>("auto");
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [teamMode, setTeamMode] = useState(false);
@@ -130,9 +131,15 @@ function AssistantPage() {
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/history">السجل</Link>
+            </Button>
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
+            <Button size="sm" variant={model === "auto" ? "default" : "outline"} onClick={() => setModel("auto")}>
+              تلقائي: نموذج لكل مساعد
+            </Button>
             {MODELS.map((m) => (
               <Button
                 key={m.id}
@@ -173,6 +180,7 @@ function AssistantPage() {
             >
               <span>{a.emoji}</span>
               {a.name}
+              <span className="text-[10px] opacity-70">{MODELS.find((m) => m.id === a.model)?.label}</span>
             </Button>
           ))}
         </div>
