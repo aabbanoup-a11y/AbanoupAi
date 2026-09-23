@@ -56,85 +56,62 @@ function AssistantPage() {
   const push = (k: string, msg: Msg) =>
     setThreads((t) => ({ ...t, [k]: [...(t[k] ?? []), msg] }));
 
-  const fallbacks = MODELS.map((m) => m.id).filter((m) => m !== model);
+  // "auto" = كل مساعد يستخدم النموذج المخصص له.
+  const modelFor = (a: { model: string }) => (model === "auto" ? a.model : model);
+  const scroll = () =>
+    requestAnimationFrame(() => endRef.current?.scrollIntoView({ behavior: "smooth" }));
+
+  const runOne = async (
+    a: ReturnType<typeof getAssistant>,
+    thread: string,
+    msgs: { role: "user" | "assistant"; content: string }[],
+    prompt: string,
+  ) => {
+    const m = modelFor(a);
+    try {
+      const reply = await ask({ data: { system: a.system, model: m, fallbacks: chainFor(m), messages: msgs } });
+      push(thread, { role: "assistant", content: reply.text, author: `${a.emoji} ${a.name}`, model: reply.model });
+      notifyDone(`${a.emoji} ${a.name} خلّص المهمة`, reply.text);
+      void logRun({ agent_kind: thread === "team" ? "team" : "assistant", agent_key: a.key, agent_name: a.name, model: reply.model, prompt, reply: reply.text, status: "done" });
+      scroll();
+      return reply;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "حصل خطأ";
+      push(thread, { role: "assistant", content: `⚠️ ${msg}`, author: `${a.emoji} ${a.name}` });
+      notifyDone(`${a.name} ما قدرش يكمّل`, msg, false);
+      void logRun({ agent_kind: thread === "team" ? "team" : "assistant", agent_key: a.key, agent_name: a.name, model: m, prompt, reply: msg, status: "error" });
+      scroll();
+      return null;
+    }
+  };
 
   const send = async (text: string) => {
     const q = text.trim();
     if (!q || loading) return;
+    requestNotifyPermission();
     setInput("");
     push(key, { role: "user", content: q });
     setLoading(true);
 
     try {
       if (teamMode) {
-        const history = (threads["team"] ?? []).slice(-4);
+        const history = (threads["team"] ?? []).slice(-4).map(strip);
+        const plan = await runOne(getAssistant("manager"), "team", [...history, { role: "user", content: q }], q);
         const crew = ASSISTANTS.filter((a) => a.key !== "manager");
-        const plan = await ask({
-          data: {
-            system: getAssistant("manager").system,
-            model,
-            fallbacks,
-            messages: [...history.map(strip), { role: "user" as const, content: q }],
-          },
-        });
-        push("team", {
-          role: "assistant",
-          content: plan.text,
-          author: "🧭 المدير المنسّق",
-          model: plan.model,
-        });
-
-        const results = await Promise.allSettled(
+        // كل مساعد يظهر رده أول ما يخلص، بالتوازي.
+        await Promise.all(
           crew.map((a) =>
-            ask({
-              data: {
-                system: a.system,
-                model,
-                fallbacks,
-                messages: [
-                  {
-                    role: "user" as const,
-                    content: `طلب المستخدم: ${q}\n\nخطة المدير:\n${plan.text}\n\nنفّذ الجزء الخاص بتخصصك فقط في 5 نقاط عملية قصيرة.`,
-                  },
-                ],
-              },
-            }),
+            runOne(a, "team", [{ role: "user", content: `طلب المستخدم: ${q}\n\nخطة المدير:\n${plan?.text ?? "(غير متاحة)"}\n\nنفّذ الجزء الخاص بتخصصك فقط في 5 نقاط عملية قصيرة.` }], q),
           ),
         );
-        results.forEach((r, i) => {
-          const a = crew[i]!;
-          if (r.status === "fulfilled") {
-            push("team", {
-              role: "assistant",
-              content: r.value.text,
-              author: `${a.emoji} ${a.name}`,
-              model: r.value.model,
-            });
-          }
-        });
+        notifyDone("الفريق خلّص كل المهام", q);
       } else {
-        const history = (threads[key] ?? []).slice(-6);
-        const reply = await ask({
-          data: {
-            system: assistant.system,
-            model,
-            fallbacks,
-            messages: [...history.map(strip), { role: "user" as const, content: q }],
-          },
-        });
-        push(key, {
-          role: "assistant",
-          content: reply.text,
-          author: `${assistant.emoji} ${assistant.name}`,
-          model: reply.model,
-        });
-        if (reply.switched) toast.info(`تم التحويل تلقائياً لنموذج بديل: ${reply.model}`);
+        const history = (threads[key] ?? []).slice(-6).map(strip);
+        await runOne(assistant, key, [...history, { role: "user", content: q }], q);
       }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "حصل خطأ غير متوقع");
     } finally {
       setLoading(false);
-      requestAnimationFrame(() => endRef.current?.scrollIntoView({ behavior: "smooth" }));
+      scroll();
     }
   };
 
