@@ -275,45 +275,45 @@ function TaskDialog({
 }) {
   const [goal, setGoal] = useState("");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<GeneratedTask[]>([]);
-  const run = useServerFn(generateTasks);
+  const [reply, setReply] = useState<{ text: string; model: string } | null>(null);
+  const ask = useServerFn(askAssistant);
   const queryClient = useQueryClient();
 
-  const handleGenerate = async () => {
+  // كل موظف = نموذج ذكاء اصطناعي بياخد دوره الوظيفي.
+  const handleRun = async () => {
     if (!employee) return;
+    requestNotifyPermission();
+    const task = goal.trim() || "اكتب خطة عمل لهذا الأسبوع ونفّذ أول خطوة";
+    const model = employee.ai_model || "google/gemini-3.8-flash";
     setLoading(true);
-    setResult([]);
+    setReply(null);
     try {
-      const tasks = await run({
+      const r = await ask({
         data: {
-          employeeName: employee.full_name,
-          department: employee.department,
-          jobTitle: employee.job_title,
-          goal: goal.trim() || "تحسين أداء الموظف هذا الأسبوع",
+          system: `أنت ${employee.full_name}، تعمل ${employee.job_title} في قسم ${employee.department}. نفّذ المهمة المطلوبة بنفسك كخبير في وظيفتك: اكتب الناتج النهائي الفعلي (مش مجرد نصائح)، ثم في آخر سطر اكتب "الخطوة التالية:" باقتراح واحد. رد بالعربية باختصار.`,
+          model,
+          fallbacks: chainFor(model),
+          messages: [{ role: "user", content: task }],
         },
       });
-      setResult(tasks);
+      setReply({ text: r.text, model: r.model });
+      await supabase.from("tasks").insert({
+        employee_id: employee.id,
+        title: task.slice(0, 200),
+        details: r.text,
+        priority: "medium",
+        status: "done",
+      });
+      void logRun({ agent_kind: "employee", agent_key: employee.code, agent_name: employee.full_name, model: r.model, prompt: task, reply: r.text, status: "done" });
+      notifyDone(`${employee.full_name} خلّص المهمة`, r.text);
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "حصل خطأ غير متوقع");
+      const msg = err instanceof Error ? err.message : "حصل خطأ غير متوقع";
+      void logRun({ agent_kind: "employee", agent_key: employee.code, agent_name: employee.full_name, model, prompt: task, reply: msg, status: "error" });
+      notifyDone(`${employee.full_name} ما قدرش يكمّل`, msg, false);
     } finally {
       setLoading(false);
     }
-  };
-
-  const saveTask = async (task: GeneratedTask) => {
-    if (!employee) return;
-    const { error } = await supabase.from("tasks").insert({
-      employee_id: employee.id,
-      title: task.title,
-      details: task.details,
-      priority: task.priority,
-    });
-    if (error) {
-      toast.error("تعذر حفظ المهمة");
-      return;
-    }
-    toast.success("تم حفظ المهمة");
-    queryClient.invalidateQueries({ queryKey: ["tasks"] });
   };
 
   return (
@@ -321,36 +321,30 @@ function TaskDialog({
       <DialogContent dir="rtl" className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-right">
-            مهام لـ {employee?.full_name ?? ""}
+            كلّف {employee?.full_name ?? ""} بمهمة
           </DialogTitle>
         </DialogHeader>
+        <p className="text-xs text-muted-foreground">
+          {employee?.job_title} · النموذج: {employee?.ai_model}
+        </p>
 
         <Input
           value={goal}
           onChange={(e) => setGoal(e.target.value)}
-          placeholder="اكتب الهدف (مثال: رفع المبيعات 10% خلال أسبوع)"
+          placeholder="اكتب المهمة (مثال: اكتب تقرير مبيعات الأسبوع)"
         />
 
-        <Button onClick={handleGenerate} disabled={loading}>
+        <Button onClick={handleRun} disabled={loading}>
           {loading ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-          {loading ? "بيكتب المهام..." : "ولّد المهام"}
+          {loading ? "بينفّذ المهمة..." : "نفّذ المهمة"}
         </Button>
 
-        <div className="max-h-72 space-y-2 overflow-y-auto">
-          {result.map((t, i) => (
-            <div key={i} className="rounded-lg border border-border p-3">
-              <div className="flex items-center justify-between gap-2">
-                <p className="font-medium">{t.title}</p>
-                <Badge variant="outline">{priorityLabel[t.priority] ?? t.priority}</Badge>
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground">{t.details}</p>
-              <Button size="sm" variant="ghost" className="mt-2" onClick={() => saveTask(t)}>
-                <Plus className="size-4" />
-                حفظ المهمة
-              </Button>
-            </div>
-          ))}
-        </div>
+        {reply && (
+          <div className="max-h-72 overflow-y-auto rounded-lg border border-border p-3">
+            <p className="mb-1 text-xs font-semibold text-primary">{reply.model}</p>
+            <p className="whitespace-pre-wrap text-sm leading-7">{reply.text}</p>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
