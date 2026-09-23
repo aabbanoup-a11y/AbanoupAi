@@ -14,8 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_runs: {
+        Row: {
+          agent_key: string
+          agent_kind: string
+          agent_name: string
+          created_at: string
+          id: string
+          model: string | null
+          prompt: string
+          reply: string | null
+          status: string
+        }
+        Insert: {
+          agent_key: string
+          agent_kind: string
+          agent_name: string
+          created_at?: string
+          id?: string
+          model?: string | null
+          prompt: string
+          reply?: string | null
+          status?: string
+        }
+        Update: {
+          agent_key?: string
+          agent_kind?: string
+          agent_name?: string
+          created_at?: string
+          id?: string
+          model?: string | null
+          prompt?: string
+          reply?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       employees: {
         Row: {
+          ai_model: string | null
           code: string
           created_at: string
           department: string
@@ -28,6 +65,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          ai_model?: string | null
           code: string
           created_at?: string
           department: string
@@ -40,6 +78,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          ai_model?: string | null
           code?: string
           created_at?: string
           department?: string
