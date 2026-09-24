@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_models: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          label: string
+          priority: number
+          provider: string
+          supports_files: boolean
+          supports_images: boolean
+          supports_video: boolean
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id: string
+          label: string
+          priority?: number
+          provider: string
+          supports_files?: boolean
+          supports_images?: boolean
+          supports_video?: boolean
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          label?: string
+          priority?: number
+          provider?: string
+          supports_files?: boolean
+          supports_images?: boolean
+          supports_video?: boolean
+        }
+        Relationships: []
+      }
       ai_runs: {
         Row: {
           agent_key: string
@@ -92,6 +128,51 @@ export type Database = {
         }
         Relationships: []
       }
+      memory_settings: {
+        Row: {
+          consent: boolean
+          enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          consent?: boolean
+          enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          consent?: boolean
+          enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mood_checkins: {
+        Row: {
+          created_at: string
+          id: string
+          mood: number
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mood: number
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mood?: number
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           created_at: string
@@ -129,6 +210,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_memories: {
+        Row: {
+          category: string
+          content_enc: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          content_enc: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          content_enc?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
