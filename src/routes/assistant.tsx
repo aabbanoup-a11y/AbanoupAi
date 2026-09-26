@@ -203,7 +203,7 @@ function AssistantPage() {
     try {
       const items = await suggestMem({ data: { text } });
       if (!items.length) return toast.info("مفيش حاجة واضحة أفتكرها");
-      setSuggest(items.map((i) => ({ ...i, pick: true })));
+      return setSuggest(items.map((i) => ({ ...i, pick: true })));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "حصل خطأ");
     }

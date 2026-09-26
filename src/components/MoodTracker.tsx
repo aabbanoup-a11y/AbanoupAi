@@ -24,7 +24,7 @@ export function MoodTracker() {
     if (error) return toast.error(error.message);
     setNote("");
     toast.success("اتسجل — أي خطوة صغيرة تفرق");
-    void load();
+    return void load();
   };
   const series = [...rows].reverse();
 
