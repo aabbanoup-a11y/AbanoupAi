@@ -17,7 +17,7 @@ export function MoodTracker() {
   useEffect(() => {
     void load();
   }, []);
-  const add = async (mood: number) => {
+  const add = async (mood: number): Promise<unknown> => {
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return toast.error("سجّل دخول الأول");
     const { error } = await supabase.from("mood_checkins").insert({ user_id: u.user.id, mood, note: note.trim() || null });

@@ -31,7 +31,7 @@ export const Route = createFileRoute("/assistant")({
   }),
 });
 
-type Att = { path: string; mime: string; name: string; preview?: string };
+type Att = { path: string; mime: string; name: string; preview?: string | undefined };
 type Msg = { role: "user" | "assistant"; content: string; author?: string; model?: string; atts?: Att[] };
 type Suggestion = { category: "preference" | "trait" | "goal" | "habit"; content: string; pick: boolean };
 
@@ -197,7 +197,7 @@ function AssistantPage() {
     }
   };
 
-  const openSuggestions = async () => {
+  const openSuggestions = async (): Promise<unknown> => {
     const text = messages.filter((m) => m.role === "user").map((m) => m.content).join("\n").slice(0, 8000);
     if (!text) return toast.info("اكتب شوية في المحادثة الأول");
     try {
