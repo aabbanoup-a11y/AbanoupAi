@@ -154,10 +154,30 @@ function AssistantPage() {
             runOne(a, "team", [{ role: "user", content: `طلب المستخدم: ${q}\n\nخطة المدير:\n${plan.text}\n\nنفّذ الجزء الخاص بتخصصك فقط في 5 نقاط عملية قصيرة.` }], q, atts),
           ),
         );
-        const shared = crew
+        const round1 = crew
           .map((a, i) => (results[i] ? `${a.name}:\n${results[i]!.text}` : ""))
           .filter(Boolean)
           .join("\n\n");
+        // جولة تبادل: كل مساعد يشوف ردود زمايله ويبعتلهم ملاحظة أو تعديل.
+        const replies = round1
+          ? await Promise.all(
+              crew.map((a, i) =>
+                results[i]
+                  ? runOne(
+                      { ...a, name: `${a.name} ↔ رد على الفريق` },
+                      "team",
+                      [{ role: "user", content: `طلب المستخدم: ${q}\n\nردود زمايلك في الفريق:\n${round1.slice(0, 12000)}\n\nابعت رسالة قصيرة (3 نقاط) لزمايلك: إيه اللي تتفق معاه، إيه اللي يتعارض مع تخصصك، وإيه التعديل المقترح. اذكر اسم الزميل اللي بتكلمه.` }],
+                      q,
+                    )
+                  : Promise.resolve(null),
+              ),
+            )
+          : [];
+        const round2 = crew
+          .map((a, i) => (replies[i] ? `${a.name} (رسالة للفريق):\n${replies[i]!.text}` : ""))
+          .filter(Boolean)
+          .join("\n\n");
+        const shared = [round1, round2].filter(Boolean).join("\n\n---\n\n");
         if (shared) {
           await runOne(
             { ...manager, name: "المدير — الخلاصة النهائية" },
