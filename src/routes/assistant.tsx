@@ -205,7 +205,7 @@ function AssistantPage() {
       if (!items.length) return toast.info("مفيش حاجة واضحة أفتكرها");
       return setSuggest(items.map((i) => ({ ...i, pick: true })));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "حصل خطأ");
+      return toast.error(e instanceof Error ? e.message : "حصل خطأ");
     }
   };
 
