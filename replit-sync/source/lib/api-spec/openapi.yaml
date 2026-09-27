@@ -1,0 +1,370 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: AbanoupAi supervised orchestration API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: console
+    description: Console overview, assistants, and activity
+  - name: browser
+    description: Audited browser task execution
+  - name: connections
+    description: Supervised service connections and change approvals
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /overview:
+    get:
+      operationId: getOverview
+      tags: [console]
+      summary: Get the console overview
+      responses:
+        "200":
+          description: Overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Overview"
+  /assistants:
+    get:
+      operationId: listAssistants
+      tags: [console]
+      summary: List configured assistants and model chains
+      responses:
+        "200":
+          description: Assistants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Assistant"
+  /activity:
+    get:
+      operationId: listActivity
+      tags: [console]
+      summary: List recent execution records
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        "200":
+          description: Activity records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityRecord"
+  /chat:
+    post:
+      operationId: runChat
+      tags: [console]
+      summary: Run an assistant request without Lovable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatInput"
+      responses:
+        "200":
+          description: Assistant response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
+        "503":
+          description: Model provider is not configured
+  /connections:
+    get:
+      operationId: listConnections
+      tags: [connections]
+      summary: List connected services
+      responses:
+        "200":
+          description: Connected services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Connection"
+  /connection-actions:
+    get:
+      operationId: listConnectionActions
+      tags: [connections]
+      summary: List supervised pending and completed changes
+      responses:
+        "200":
+          description: Connection actions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConnectionAction"
+    post:
+      operationId: createConnectionAction
+      tags: [connections]
+      summary: Create a change request for owner approval
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConnectionActionInput"
+      responses:
+        "201":
+          description: Created action
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionAction"
+  /connection-actions/{id}/approve:
+    post:
+      operationId: approveConnectionAction
+      tags: [connections]
+      summary: Approve a supervised change request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Approved action
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionAction"
+  /connection-actions/{id}/reject:
+    post:
+      operationId: rejectConnectionAction
+      tags: [connections]
+      summary: Reject a supervised change request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Rejected action
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionAction"
+  /browser/tasks:
+    get:
+      operationId: listBrowserTasks
+      tags: [browser]
+      summary: List browser task runs
+      responses:
+        "200":
+          description: Browser task records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BrowserTask"
+    post:
+      operationId: createBrowserTask
+      tags: [browser]
+      summary: Execute a simple browser task with an audit trail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrowserTaskInput"
+      responses:
+        "201":
+          description: Browser task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrowserTask"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    Assistant:
+      type: object
+      required: [id, name, role, model, fallbacks, description]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        role: { type: string }
+        model: { type: string }
+        fallbacks:
+          type: array
+          items: { type: string }
+        description: { type: string }
+    Overview:
+      type: object
+      required: [repository, assistants, services, totals, latestActivity]
+      properties:
+        repository:
+          $ref: "#/components/schemas/RepositorySummary"
+        assistants:
+          type: integer
+        services:
+          type: integer
+        totals:
+          $ref: "#/components/schemas/ConsoleTotals"
+        latestActivity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityRecord"
+    RepositorySummary:
+      type: object
+      required: [owner, name, branch, lastCommit, files]
+      properties:
+        owner: { type: string }
+        name: { type: string }
+        branch: { type: string }
+        lastCommit: { type: string }
+        files: { type: integer }
+    ConsoleTotals:
+      type: object
+      required: [tasks, completed, pendingApprovals, browserRuns]
+      properties:
+        tasks: { type: integer }
+        completed: { type: integer }
+        pendingApprovals: { type: integer }
+        browserRuns: { type: integer }
+    ActivityRecord:
+      type: object
+      required: [id, kind, title, status, createdAt, steps]
+      properties:
+        id: { type: string }
+        kind: { type: string }
+        title: { type: string }
+        status: { type: string }
+        detail: { type: ["string", "null"] }
+        model: { type: ["string", "null"] }
+        createdAt: { type: string }
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityStep"
+    ActivityStep:
+      type: object
+      required: [label, status, at]
+      properties:
+        label: { type: string }
+        status: { type: string }
+        at: { type: string }
+        detail: { type: ["string", "null"] }
+    ChatInput:
+      type: object
+      required: [assistantId, message]
+      properties:
+        assistantId: { type: string }
+        message: { type: string, minLength: 1, maxLength: 20000 }
+        model: { type: ["string", "null"] }
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatMessage"
+    ChatMessage:
+      type: object
+      required: [role, content]
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+        content: { type: string }
+    ChatResponse:
+      type: object
+      required: [text, model, switched, activityId]
+      properties:
+        text: { type: string }
+        model: { type: string }
+        switched: { type: boolean }
+        activityId: { type: string }
+    Connection:
+      type: object
+      required: [id, provider, status, capabilities, note]
+      properties:
+        id: { type: string }
+        provider: { type: string }
+        status: { type: string }
+        capabilities:
+          type: array
+          items: { type: string }
+        note: { type: string }
+    ConnectionActionInput:
+      type: object
+      required: [provider, action, target, description]
+      properties:
+        provider: { type: string }
+        action: { type: string }
+        target: { type: string }
+        description: { type: string, minLength: 1, maxLength: 2000 }
+        payload: { type: ["string", "null"], maxLength: 100000 }
+    ConnectionAction:
+      type: object
+      required: [id, provider, action, target, description, status, createdAt]
+      properties:
+        id: { type: string }
+        provider: { type: string }
+        action: { type: string }
+        target: { type: string }
+        description: { type: string }
+        payload: { type: ["string", "null"] }
+        status: { type: string }
+        createdAt: { type: string }
+        completedAt: { type: ["string", "null"] }
+    BrowserTaskInput:
+      type: object
+      required: [command]
+      properties:
+        command: { type: string, minLength: 1, maxLength: 2000 }
+        url: { type: ["string", "null"] }
+    BrowserTask:
+      type: object
+      required: [id, command, status, createdAt, steps]
+      properties:
+        id: { type: string }
+        command: { type: string }
+        status: { type: string }
+        createdAt: { type: string }
+        result: { type: ["string", "null"] }
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityStep"
+
