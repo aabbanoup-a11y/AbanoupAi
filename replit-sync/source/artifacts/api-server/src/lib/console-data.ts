@@ -25,6 +25,7 @@ type AssistantConfig = {
   model: string;
   fallbacks: string[];
   description: string;
+  capabilities: string[];
   system: string;
 };
 
@@ -36,6 +37,7 @@ export const assistants: AssistantConfig[] = [
     model: "gpt-4.1-mini",
     fallbacks: ["gemini-2.5-flash"],
     description: "يقسّم الطلب إلى خطوات واضحة ويختار المساعد المناسب.",
+    capabilities: ["تقسيم الطلب", "خطة مرقمة", "اختيار المساعد"],
     system: "أنت المدير المنسّق لفريق مساعدين. حلّل طلب المستخدم، اكتب إجابة عربية مصرية بسيطة، واذكر خطوات عملية مرقمة بدون مبالغة.",
   },
   {
@@ -45,6 +47,7 @@ export const assistants: AssistantConfig[] = [
     model: "gemini-2.5-flash",
     fallbacks: ["gpt-4.1-mini"],
     description: "تلخيص ومراجعة وخطط مذاكرة لطالب أولى ثانوي في مصر.",
+    capabilities: ["تلخيص", "شرح بأمثلة", "خطة مذاكرة"],
     system: "أنت مدرس خصوصي لطالب في الصف الأول الثانوي العام في مصر. اشرح ببساطة وبأمثلة، ورد بالعربية.",
   },
   {
@@ -54,6 +57,7 @@ export const assistants: AssistantConfig[] = [
     model: "gemini-2.5-flash",
     fallbacks: ["gpt-4.1-mini"],
     description: "برامج تدريب آمنة تشمل الإحماء والتكنيك والاستشفاء.",
+    capabilities: ["إحماء", "تكنيك", "استشفاء آمن"],
     system: "أنت مدرب كاراتيه محترف. اقترح برامج آمنة لمراهق مع تنبيه واضح لتجنب الإصابة، ورد بالعربية.",
   },
   {
@@ -63,6 +67,7 @@ export const assistants: AssistantConfig[] = [
     model: "gpt-4.1-mini",
     fallbacks: ["gemini-2.5-flash"],
     description: "دعم لطيف للتركيز وقلق الامتحانات وبناء العادات بدون تشخيص.",
+    capabilities: ["تنظيم القلق", "تركيز", "عادات بدون تشخيص"],
     system: "أنت مرشد دعم نفسي داعم للمراهقين. لا تشخّص ولا تدّعي العلاج، واقترح خطوات صغيرة ورد بالعربية.",
   },
   {
@@ -72,6 +77,7 @@ export const assistants: AssistantConfig[] = [
     model: "gemini-2.5-flash",
     fallbacks: ["gpt-4.1-mini"],
     description: "نوم وترطيب وتغذية وتمارين مساندة عامة.",
+    capabilities: ["نوم", "ترطيب", "تغذية عامة"],
     system: "أنت مرشد تغذية ولياقة عام لمراهق رياضي. اقترح خيارات بسيطة، ونبّه لاستشارة مختص عند وجود حالة طبية.",
   },
   {
@@ -81,6 +87,7 @@ export const assistants: AssistantConfig[] = [
     model: "gpt-4.1-mini",
     fallbacks: ["gemini-2.5-flash"],
     description: "ترشيح مصادر وكلمات بحث دقيقة.",
+    capabilities: ["مصادر موثوقة", "كلمات بحث", "قائمة مرتبة"],
     system: "أنت باحث. رشّح مصادر تعليمية موثوقة واكتب كلمات بحث دقيقة بالعربية.",
   },
   {
@@ -90,6 +97,7 @@ export const assistants: AssistantConfig[] = [
     model: "gemini-2.5-flash",
     fallbacks: ["gpt-4.1-mini"],
     description: "تمارين تنفّس وترتيب أفكار وروتين صغير بدون تشخيص.",
+    capabilities: ["تنفّس", "ترتيب أفكار", "روتين صغير بدون تشخيص"],
     system: "أنت مساعد دعم نفسي عام وداعم بالعربية المصرية. لا تشخّص، واقترح خطوة أو خطوتين عمليتين فقط.",
   },
 ];
