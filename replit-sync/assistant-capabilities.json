@@ -1,0 +1,124 @@
+{
+  "version": "1",
+  "repository": "aabbanoup-a11y/AbanoupAi",
+  "branch": "main",
+  "purpose": "Reference sync from the independent AbanoupAi Control Console.",
+  "modelPolicy": {
+    "noLovableGateway": true,
+    "noReplitAIUpgrade": true,
+    "noProviderKeysCommitted": true,
+    "runtimeBehaviorWithoutProvider": "Keep the model catalog visible and return a clear unavailable-provider status; do not invent model output."
+  },
+  "assistants": [
+    {
+      "id": "manager",
+      "role": "تنسيق المهام",
+      "model": "gpt-4.1-mini",
+      "fallbacks": [
+        "gemini-2.5-flash"
+      ],
+      "capabilities": [
+        "تقسيم الطلب",
+        "خطة مرقمة",
+        "اختيار المساعد"
+      ]
+    },
+    {
+      "id": "study",
+      "role": "الدراسة والمراجعة",
+      "model": "gemini-2.5-flash",
+      "fallbacks": [
+        "gpt-4.1-mini"
+      ],
+      "capabilities": [
+        "تلخيص",
+        "شرح بأمثلة",
+        "خطة مذاكرة"
+      ]
+    },
+    {
+      "id": "karate",
+      "role": "التدريب واللياقة",
+      "model": "gemini-2.5-flash",
+      "fallbacks": [
+        "gpt-4.1-mini"
+      ],
+      "capabilities": [
+        "إحماء",
+        "تكنيك",
+        "استشفاء آمن"
+      ]
+    },
+    {
+      "id": "mind",
+      "role": "الدعم والتركيز",
+      "model": "gpt-4.1-mini",
+      "fallbacks": [
+        "gemini-2.5-flash"
+      ],
+      "capabilities": [
+        "تنظيم القلق",
+        "تركيز",
+        "عادات بدون تشخيص"
+      ]
+    },
+    {
+      "id": "body",
+      "role": "التغذية والنوم",
+      "model": "gemini-2.5-flash",
+      "fallbacks": [
+        "gpt-4.1-mini"
+      ],
+      "capabilities": [
+        "نوم",
+        "ترطيب",
+        "تغذية عامة"
+      ]
+    },
+    {
+      "id": "research",
+      "role": "المصادر والتعليم",
+      "model": "gpt-4.1-mini",
+      "fallbacks": [
+        "gemini-2.5-flash"
+      ],
+      "capabilities": [
+        "مصادر موثوقة",
+        "كلمات بحث",
+        "قائمة مرتبة"
+      ]
+    },
+    {
+      "id": "wellness",
+      "role": "روتين وتهدئة",
+      "model": "gemini-2.5-flash",
+      "fallbacks": [
+        "gpt-4.1-mini"
+      ],
+      "capabilities": [
+        "تنفّس",
+        "ترتيب أفكار",
+        "روتين صغير بدون تشخيص"
+      ]
+    }
+  ],
+  "browser": {
+    "capabilities": [
+      "أمر نصي",
+      "فتح HTTP/HTTPS",
+      "خطوات مؤرخة",
+      "نتيجة قابلة للتدقيق"
+    ],
+    "noDestructiveExternalWrites": true
+  },
+  "supervision": {
+    "changeRequests": true,
+    "approvalRequired": true,
+    "externalWritesInThisSync": false
+  },
+  "targets": {
+    "github": "source/reference sync",
+    "supabase": "connected project discovered; no schema mutation",
+    "cloudflare": "connected MCP discovered; no resource mutation"
+  }
+}
