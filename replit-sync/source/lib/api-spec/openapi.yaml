@@ -222,7 +222,7 @@ components:
         - status
     Assistant:
       type: object
-      required: [id, name, role, model, fallbacks, description]
+      required: [id, name, role, model, fallbacks, description, capabilities]
       properties:
         id: { type: string }
         name: { type: string }
@@ -232,6 +232,9 @@ components:
           type: array
           items: { type: string }
         description: { type: string }
+        capabilities:
+          type: array
+          items: { type: string }
     Overview:
       type: object
       required: [repository, assistants, services, totals, latestActivity]
