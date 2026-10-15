@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -61,6 +61,7 @@ export type Database = {
           prompt: string
           reply: string | null
           status: string
+          user_id: string | null
         }
         Insert: {
           agent_key: string
@@ -72,6 +73,7 @@ export type Database = {
           prompt: string
           reply?: string | null
           status?: string
+          user_id?: string | null
         }
         Update: {
           agent_key?: string
@@ -83,6 +85,7 @@ export type Database = {
           prompt?: string
           reply?: string | null
           status?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -173,9 +176,37 @@ export type Database = {
         }
         Relationships: []
       }
+      safety_incidents: {
+        Row: {
+          confirmed_safe: boolean
+          created_at: string
+          id: string
+          kind: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          confirmed_safe?: boolean
+          created_at?: string
+          id?: string
+          kind?: string
+          source?: string
+          user_id?: string
+        }
+        Update: {
+          confirmed_safe?: boolean
+          created_at?: string
+          id?: string
+          kind?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           created_at: string
+          created_by: string | null
           details: string | null
           employee_id: string | null
           id: string
@@ -185,6 +216,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           details?: string | null
           employee_id?: string | null
           id?: string
@@ -194,6 +226,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           details?: string | null
           employee_id?: string | null
           id?: string
