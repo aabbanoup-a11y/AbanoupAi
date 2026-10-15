@@ -206,6 +206,7 @@ export type Database = {
       tasks: {
         Row: {
           created_at: string
+          created_by: string | null
           details: string | null
           employee_id: string | null
           id: string
@@ -215,6 +216,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           details?: string | null
           employee_id?: string | null
           id?: string
@@ -224,6 +226,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           details?: string | null
           employee_id?: string | null
           id?: string
